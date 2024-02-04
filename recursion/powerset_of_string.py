@@ -2,6 +2,7 @@
 Print power set for a given string
 """
 
+import math
 
 def powerset(letter:str, indx: int, current: str) -> None:
 
@@ -11,6 +12,23 @@ def powerset(letter:str, indx: int, current: str) -> None:
     # here time complexity is O(2 power n) 
     powerset(letter, indx+1, current + letter[indx])
     powerset(letter, indx+1, current)
+
+
+def print_powerset(letter:str) -> list[str]:
+
+    size = pow(2, len(letter))
+    powerset = []
+    for i in range(size):
+        st = []
+        for j in range(len(letter)):
+
+            if (i & (1 << j)):
+                # print(letter[j])
+                st.append(letter[j])
+        powerset.append("".join(st))
+    return powerset
+    
+
 
 # Iterative methode algo
 
@@ -26,4 +44,6 @@ def powerset(letter:str, indx: int, current: str) -> None:
 # Add that subset to the original list L.
 
 if __name__ == "__main__":
-    powerset("abc", 0, "")
+    # powerset("abc", 0, "")
+    powerset = print_powerset("abc")
+    print("Powerset is: ", powerset)
