@@ -9,6 +9,7 @@ from queue import PriorityQueue
 # and if peak < current element the pop the peak and insert current item it will run heapify automatically, 
 # continue this till end of array, at the end we will have min heap of size k, since its min 
 # heap so peak will be minimum of heap and it contain k elemet so peak will be kth largest.
+# Time complexity O(N * log(K)), Auxiliary Space: O(K)
 def kth_largest_element(numbers: List[int], k: int) -> int:
 
     pq = PriorityQueue()

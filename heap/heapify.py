@@ -1,3 +1,5 @@
+# Adding and removing element from heap is O(log n) that is what heapify take
+# Finding max in maxHeap and finding min in minHeap is O(1) whereas in list its O(n)
 from typing import List
 
 def heapify(numbers: List, item_index: int, numbers_len: int):
