@@ -10,6 +10,7 @@ def get_gcd(numbers: list[int]) -> int:
             return a
         # gcd_of_two_numbers(60, 24) -> gcd_of_two_numbers(24, 12) -> gcd_of_two_numbers(12, 0)
         return gcd_of_two_numbers(b, a%b)
+    
     numbers.sort()
     return gcd_of_two_numbers(numbers[-1], numbers[0])
 

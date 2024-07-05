@@ -8,11 +8,18 @@ def is_palindrome(n: int) -> bool:
 
 def get_reverse_number(n: int) -> int:
 
-    num = 0
+    # To handle negative number
+    is_negative = n<0
+    if is_negative:
+        n = n*(-1)
 
+    num = 0
     while n > 0:
         num = num*10 + n%10
         n= n//10
+
+    if is_negative:
+        num = num*(-1)
     return num
 
 
