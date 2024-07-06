@@ -333,11 +333,6 @@ select * from employee e1 where salary >(
 )
 -- Here or each record in outer query subquery is executed, so can say its expensive query
 
-Find departmanet who do not have employee.
-
-select * from department d where not EXISTS (
-  select 1 from employee e where d.department_name = e.department_name
-  )
 
 -- Nested subquery
 select * from (
@@ -349,7 +344,7 @@ JOIN (
 	select store_name, sum(price) as total_sales
 from sales group by store_name)
 	as x) avg_sales
-on sales.tottal_sales > avg_sales.sales;
+on sales.total_sales > avg_sales.sales;
 
 -- Better way of doing this is using WITH clause as we have some repititive part in subquery
 with sales as (
@@ -358,7 +353,7 @@ with sales as (
 )
 select * from sales 
   JOIN (select avg(total_sales) as sales from sales x) avg_sales
-  on sales.tottal_sales > avg_sales.sales;
+  on sales.total_sales > avg_sales.sales;
 
 
 -- WIth Clause
@@ -395,3 +390,102 @@ select *
 from total_sales ts
 JOIN avg_sales av
 ON ts.total_sales_per_store > av.avg_sales_for_all_stores
+
+
+-- Window functions
+-- Max salary from each department
+select *, max(salary) over(partition by department_name) as max_salary
+from employee 
+
+-- Add row number for each department
+select *, row_number() over(partition by department_name) as rn
+from employee 
+
+-- Fetch first 2 employee from each dep who join company
+select * 
+from 
+(select *, row_number() over(partition by department_name order by employee_id) as rn 
+from employee) as dt
+where dt.rn < 3;
+
+-- Fetch top 2 employee from each dep earning the max salary
+-- If salary of employee is same in a dept then rank will give the same rank number to that record but when 
+-- goes to next record it skip the number and give rank +.
+-- so For example, if two rows are 2th (have the same rank), the next row will be 4th (i.e., 3rd doesn’t exist). ex if we have 2 employee with same salary at rank 2 then both will get rank as 2 and next with salary 
+-- lower that this will get rank 4(missed 3) in dense_rank it will be 3 no skip
+select * 
+from 
+(select *, rank() over(partition by department_name order by salary desc) as rn 
+from employee) as dt
+where dt.rn < 3;
+
+-- https://medium.com/@LoriLu/whats-the-difference-rank-vs-dense-rank-vs-row-number-3aca5ecfb928 rank vs dense_rank vs row_number
+
+-- Query to display is salary of employee is higher/lower/equal to prev employee
+
+select e.*, 
+	CASE WHEN e.salary > lag(salary, 1, 0) over(partition by department_name order by employee_id) THEN 'Higher then prev'
+		WHEN e.salary < lag(salary, 1, 0) over(partition by department_name order by employee_id) THEN 'Lower then prev'
+		WHEN e.salary = lag(salary, 1, 0) over(partition by department_name order by employee_id) THEN 'Equal to prev'
+	END as sal_status,
+  lead(salary, 1, 0) over(partition by department_name order by employee_id) as lead_sal
+from employee e
+
+
+-- Query to dispaly name of employ first join in each dept
+select *, 
+first_value(employee_name) over(
+  partition by department_name order by employee_id
+  range between unbounded preceding and current row -- Default frame
+  ) as first_emp
+from employee
+
+-- Query to dispaly name of employ last join in each dept
+select *, 
+last_value(employee_name) over(
+  partition by department_name order by employee_id
+  range between unbounded preceding and unbounded following -- New frame considering all following rows 
+  ) as first_emp
+from employee
+
+-- using alias for window func
+
+select *,
+first_value(employee_name) over w as first_emp, 
+last_value(employee_name) over w as last_emp,
+nth_value(employee_name, 2) over w as second_emp
+from employee
+window w as (
+  partition by department_name order by employee_id
+  range between unbounded preceding and unbounded following
+)
+
+-- Query to segregate employee in high/mid/low salary
+select employee_id, employee_name,
+	CASE WHEN b.bucket=1 THEN 'High Salary emp'
+		WHEN b.bucket=2 THEN 'Mid Salary emp'
+		WHEN b.bucket=3 THEN 'Low Salary emp'
+	END as sal
+from (select *,
+ntile(3) over(order by salary desc) as bucket -- ntile create/segregate data into number of buckets mentions in it
+from employee
+) as b
+
+-- Query to fetch employee who are constituting for 40 % of table data based on salary
+-- percent_rank
+select employee_name, salary, (cum_dist_salary_per)||'%' as cum_dist_salary
+from (
+	select *,
+	cume_dist() over(order by salary desc) as cum_dist_salary,
+ 	round(cume_dist() over(order by salary desc)::numeric*100, 2) as cum_dist_salary_per
+from employee) x
+where x.cum_dist_salary_per <=40
+
+-- Query to fetch employee 'Yallon Yverly' salary how much more than other employee
+select employee_name, salary, (cum_dist_salary_per)||'%' as cum_dist_salary
+from (
+	select *,
+	percent_rank() over(order by salary desc) as cum_dist_salary,
+ 	round(percent_rank() over(order by salary desc)::numeric*100, 2) as cum_dist_salary_per
+from employee) x
+where x.employee_name = 'Yallon Yverly'
